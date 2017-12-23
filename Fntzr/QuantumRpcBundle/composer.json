@@ -1,0 +1,24 @@
+{
+    "name":"fntzr/quantum-rpc",
+    "description":"Simplified interpretation of JSON-RPC",
+    "keywords":["json", "rpc", "jsonrpc", "json-rpc", "webservice", "symfony2bundle" ],
+    "homepage":"https://github.com/garbalinskiy/fntzr-quantum-rpc",
+    "license":"MIT",
+    "type": "symfony-bundle",
+    "authors":[
+        {
+            "name":"Sergey Garbalinskiy"
+        }
+    ],
+    "require":{
+        "php":">=5.4",
+        "symfony/symfony":"~2.7|~3.0|~4.0"
+    },
+    "autoload":{
+        "psr-0":{
+            "Fntzr\\QuantumRpcBundle":""
+        }
+    },
+    "target-dir": "Fntzr/QuantumRpcBundle"
+}
+

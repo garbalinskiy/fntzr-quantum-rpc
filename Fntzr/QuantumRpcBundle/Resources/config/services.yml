@@ -1,0 +1,7 @@
+parameters:
+    fntzr_quantum_rpc.root_controller: Fntzr\QuantumRpcBundle\Controller\RootController
+
+services:
+    fntzr_quantum_rpc.root_controller:
+        class: '%fntzr_quantum_rpc.root_controller%'
+        arguments: ['@service_container', '%fntzr_quantum_rpc%']
