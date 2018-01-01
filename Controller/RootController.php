@@ -51,7 +51,7 @@ class RootController extends Controller
                 throw new InternalErrorException('Invalid service entity');
             }
 
-            $data = json_decode($request->getContent(), true);
+            $data = empty($content) ? [] : json_decode($request->getContent(), true);
 
             if (!is_array($data)) {
                 throw new ParseErrorException();
