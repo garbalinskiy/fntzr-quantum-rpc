@@ -79,11 +79,11 @@ class RootController extends Controller
             'message' => $exception->getMessage()
         ];
 
-        return new JsonResponse($data, 500);
+        return new JsonResponse(["error" => $data], 200);
     }
 
     protected function getDataResponse($data)
     {
-        return new JsonResponse($data, 200);
+        return new JsonResponse(["result" => $data], 200);
     }
 }
