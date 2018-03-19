@@ -4,6 +4,8 @@ namespace Fntzr\QuantumRpcBundle\Controller;
 
 use Fntzr\QuantumRpcBundle\Exception\AbstractExtension;
 use Fntzr\QuantumRpcBundle\Exception\InternalErrorException;
+use Fntzr\QuantumRpcBundle\Exception\MissingParamsException;
+use Fntzr\QuantumRpcBundle\Exception\InvalidParamsException;
 use Fntzr\QuantumRpcBundle\Exception\MethodNotFoundException;
 use Fntzr\QuantumRpcBundle\Exception\ParseErrorException;
 use Fntzr\QuantumRpcBundle\Service\AbstractMethodService;
@@ -11,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 class RootController extends Controller
 {
@@ -32,7 +35,12 @@ class RootController extends Controller
         $this->config = $config;
     }
 
-    public function execute(Request $request, string $version, string $method)
+    protected function getServiceName(string $version, string $method)
+    {
+        return $this->config['versions'][$version]['methods'][$method] ?? null;
+    }
+
+    public function apiAction(Request $request, string $version, string $method)
     {
         try {
             $serviceName = $this->getServiceName($version, $method);
@@ -51,6 +59,10 @@ class RootController extends Controller
                 throw new InternalErrorException('Invalid service entity');
             }
 
+            if (!is_callable($serviceName, AbstractMethodService::EXECUTE_METHOD)) {
+                throw new InternalErrorException("Invalid method declaration");
+            }
+
             $content = $request->getContent();
             $data = empty($content) ? [] : json_decode($content, true);
 
@@ -58,7 +70,7 @@ class RootController extends Controller
                 throw new ParseErrorException();
             }
 
-            $result = $service->execute($data);
+            $result = $this->executeMethod($service, $data);
             $response = $this->getDataResponse($result);
         } catch (\Exception $exception) {
             $response = $this->getErrorResponse($exception);
@@ -67,9 +79,33 @@ class RootController extends Controller
         return $response;
     }
 
-    protected function getServiceName(string $version, string $method)
+    protected function executeMethod(AbstractMethodService $service, $requestParams)
     {
-        return $this->config['versions'][$version]['methods'][$method] ?? null;
+        $methodReflection = new \ReflectionMethod($service, AbstractMethodService::EXECUTE_METHOD);
+
+        $params = [];
+        $missingParams = [];
+
+        /* @var \ReflectionParameter $paramReflection */
+        foreach ($methodReflection->getParameters() as $paramReflection) {
+            $parameterName = $paramReflection->getName();
+            $parameterClass = $paramReflection->getClass() ? $paramReflection->getClass()->getName() : null;
+            $parameterIsOptional = $paramReflection->isOptional();
+
+            if ($parameterClass && isset(class_implements($parameterClass)[UserInterface::class])) {
+                $params[] = $this->getUser();
+            } else if (!isset($requestParams[$parameterName]) && !$parameterIsOptional) {
+                $missingParams[] = $parameterName;
+            } else {
+                $params[] = $requestParams[$parameterName] ?? null;
+            }
+        }
+
+        if (count($missingParams) > 0) {
+            throw new MissingParamsException($missingParams);
+        }
+
+        return call_user_func_array([$service, AbstractMethodService::EXECUTE_METHOD], $params);
     }
 
     protected function getErrorResponse(\Exception $exception)
