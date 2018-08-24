@@ -2,8 +2,8 @@
 
 namespace Fntzr\QuantumRpcBundle\Exception;
 
-class MethodNotFoundException extends AbstractExtension
+class MethodNotFoundException extends AbstractApiException
 {
-    protected $code = -32601;
     protected $message = "The method does not exist / is not available.";
+    protected $code = -32601;
 }

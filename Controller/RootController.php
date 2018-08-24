@@ -2,12 +2,12 @@
 
 namespace Fntzr\QuantumRpcBundle\Controller;
 
-use Fntzr\QuantumRpcBundle\Exception\AbstractExtension;
-use Fntzr\QuantumRpcBundle\Exception\InternalErrorException;
-use Fntzr\QuantumRpcBundle\Exception\MissingParamsException;
-use Fntzr\QuantumRpcBundle\Exception\InvalidParamsException;
+use Fntzr\QuantumRpcBundle\Exception\AbstractApiException;
+use Fntzr\QuantumRpcBundle\Exception\InternalErrorApiException;
+use Fntzr\QuantumRpcBundle\Exception\MissingParamsApiException;
+use Fntzr\QuantumRpcBundle\Exception\InvalidParamsApiException;
 use Fntzr\QuantumRpcBundle\Exception\MethodNotFoundException;
-use Fntzr\QuantumRpcBundle\Exception\ParseErrorException;
+use Fntzr\QuantumRpcBundle\Exception\ParseErrorApiException;
 use Fntzr\QuantumRpcBundle\Service\AbstractMethodService;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -52,22 +52,22 @@ class RootController extends Controller
             $service = $this->container->get($serviceName);
 
             if (!$service) {
-                throw new InternalErrorException('Service was not found');
+                throw new InternalErrorApiException('Service was not found');
             }
 
             if (!$service instanceof AbstractMethodService) {
-                throw new InternalErrorException('Invalid service entity');
+                throw new InternalErrorApiException('Invalid service entity');
             }
 
             if (!is_callable($serviceName, AbstractMethodService::EXECUTE_METHOD)) {
-                throw new InternalErrorException("Invalid method declaration");
+                throw new InternalErrorApiException("Invalid method declaration");
             }
 
             $content = $request->getContent();
             $data = empty($content) ? [] : json_decode($content, true);
 
             if (!is_array($data)) {
-                throw new ParseErrorException();
+                throw new ParseErrorApiException();
             }
 
             $result = $this->executeMethod($service, $data);
@@ -102,7 +102,7 @@ class RootController extends Controller
         }
 
         if (count($missingParams) > 0) {
-            throw new MissingParamsException($missingParams);
+            throw new MissingParamsApiException($missingParams);
         }
 
         return call_user_func_array([$service, AbstractMethodService::EXECUTE_METHOD], $params);
@@ -114,6 +114,10 @@ class RootController extends Controller
             'code' => $exception->getCode(),
             'message' => $exception->getMessage()
         ];
+
+        if ($exception instanceof AbstractApiException && count($exception->getPayload()) > 0) {
+            $data["payload"] = $exception->getPayload();
+        }
 
         return new JsonResponse(["error" => $data], 200);
     }

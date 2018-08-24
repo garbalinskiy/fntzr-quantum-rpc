@@ -2,8 +2,8 @@
 
 namespace Fntzr\QuantumRpcBundle\Exception;
 
-class InternalErrorException extends AbstractExtension
+class InternalErrorApiException extends AbstractApiException
 {
-    protected $code = -32603;
     protected $message = "Internal JSON-RPC error.";
+    protected $code = -32603;
 }
