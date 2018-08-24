@@ -15,7 +15,7 @@
         "symfony/symfony":"~2.7|~3.0|~4.0"
     },
     "autoload": {
-        "psr-4": {"Fntzr\\QuantumRpcBundle": "src/"}
+        "psr-4": {"Fntzr\\QuantumRpcBundle\\": ""}
     }
 }
 
